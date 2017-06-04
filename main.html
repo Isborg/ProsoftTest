@@ -2,13 +2,19 @@
 	<head>
 		<title>Prosoft Nearshore</title>
 		<style type="text/css">
+			h4 {
+				text-align: center;
+			}
 			ul {
 				display: block;
+				text-align: center;
 			}
 			li {
 				display: inline-block;
-				background-color: yellow;
+				background-color: white;
+				text-align: center;
 				min-width: 40px;
+				min-height: 40px;
 			}
 		</style>
 		<script type="text/javascript">
@@ -32,21 +38,50 @@
 				var currentMonth = -1;
 				var calendarsDiv = document.getElementById("calendars");
 				var calHTML = "";
+				var liStyle = "style='background-color: green;'";
+
+				var holidayAPIKey = "e8834098-6e4c-4b91-900c-11ff431457ca";
+				var holidayListStr;
+				var xhr = new XMLHttpRequest();
+				xhr.onreadystatechange = function(){
+					if(xhr.readyState == 4){
+						if(xhr.status == 200)
+							holidayListStr = xhr.responseText;
+						else
+							console.error(xhr.statusText);
+					}
+				}
+				xhr.open("GET", "https://holidayapi.com/v1/holidays?key="+holidayAPIKey+"&year=2008&country="+countryCode, false);
+				xhr.send(null);
+				var holidayList = JSON.parse(holidayListStr);
 
 				while(numberOfDays > 0){
 					if(currentMonth !== startDate.getMonth()){
 						currentMonth = startDate.getMonth();
 						calHTML += "<h4>" + monthName(currentMonth) + " " + startDate.getFullYear() + "</h4>";
+						calHTML += "<ul><li>S</li><li>M</li><li>T</li><li>W</li><li>T</li><li>F</li><li>S</li></ul>";
 					}
 
 					calHTML += "<ul>";
 
 					var multiplier = startDate.getDay();
-					calHTML += "<li></li>".repeat(multiplier);
+					calHTML += "<li style='background-color: #cdcccd; color: #cdcccd;'>.</li>".repeat(multiplier);
 
 					for(var i = 0; i < 7 - multiplier; i++){
 						if(numberOfDays > 0 && currentMonth === startDate.getMonth()){
-							calHTML += "<li>" + startDate.getDate() + "</li>";
+							if(startDate.getDay() == 0 || startDate.getDay() == 6)
+								liStyle = "style='background-color: #fffd06;'";
+							else
+								liStyle = "style='background-color: #c7d99f;'";
+
+							var dateStr = startDate.getFullYear() + "-" + (startDate.getMonth() + 1) + "-" + startDate.getDate();
+							if(dateStr.charAt(5) != "0") dateStr = dateStr.substring(0,5) + "0" + dateStr.substring(5);
+							if(dateStr.charAt(8) != "0") dateStr = dateStr.substring(0,8) + "0" + dateStr.substring(8);
+							if(holidayList.holidays[dateStr] !== undefined){
+								liStyle = "style='background-color: #ff760a;' title='" + holidayList.holidays[dateStr][0].name + "'";
+							}
+
+							calHTML += "<li " + liStyle + ">" + startDate.getDate() + "</li>";
 							startDate = new Date(
 								startDate.getFullYear(),
 								startDate.getMonth(),
@@ -54,7 +89,7 @@
 								0,0,0);
 							numberOfDays--;
 						}else{
-							calHTML += "<li></li>";
+							calHTML += "<li style='background-color: #cdcccd; color: #cdcccd;'>.</li>";
 						}
 					}
 
@@ -79,7 +114,7 @@
 		<input type="text" id="country-code">
 		<button type="button" onclick="drawCalendars();">Run</button>
 
-		<div id="calendars" style="background-color: #f5f5f5">
+		<div id="calendars">
 		</div>
 	</body>
 </html>
